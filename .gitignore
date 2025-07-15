@@ -5,5 +5,5 @@
 .idea
 build
 *.iml
-node_modules
-node_modules/**
+./elrs-joystick-control
+.DS_Store
