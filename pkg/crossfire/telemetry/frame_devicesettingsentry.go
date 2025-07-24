@@ -7,7 +7,6 @@ package telemetry
 import (
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 )
 
 type TelemDeviceSettingsEntryExtType interface {
@@ -72,20 +71,6 @@ func (t *DeviceSettingsEntryExtFrame) DataType() CRSFFieldType {
 
 func (t *DeviceSettingsEntryExtFrame) Buffer() []byte {
 	return t.Data()
-}
-
-func (t *DeviceSettingsEntryExtFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_DeviceFieldEntry{
-			DeviceFieldEntry: &pb.CRSFDeviceFieldEntryData{
-				Id:              uint32(t.Id()),
-				ChunksRemaining: uint32(t.ChunksRemaining()),
-				ParentId:        uint32(t.ParentId()),
-				DataType:        pb.CRSFDeviceFieldType(t.DataType()),
-				Buffer:          t.Buffer(),
-			},
-		},
-	}
 }
 
 func (t *DeviceSettingsEntryExtFrame) String() string {

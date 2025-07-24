@@ -9,7 +9,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 )
 
 type TelemDeviceInfoExtType interface {
@@ -87,22 +86,6 @@ func (t *DeviceInfoExtFrame) FieldCount() uint8 {
 
 func (t *DeviceInfoExtFrame) ParameterVersion() uint8 {
 	return t.Data()[t.Offset+13]
-}
-
-func (t *DeviceInfoExtFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_DeviceInfo{
-			DeviceInfo: &pb.CRSFDeviceInfoData{
-				Id:               uint32(t.DeviceId()),
-				Name:             t.DeviceName(),
-				SerialNumber:     t.SerialNumber(),
-				HardwareVersion:  t.HardwareVersion(),
-				SoftwareVersion:  t.SoftwareVersion(),
-				FieldCount:       uint32(t.FieldCount()),
-				ParameterVersion: uint32(t.ParameterVersion()),
-			},
-		},
-	}
 }
 
 func (t *DeviceInfoExtFrame) String() string {

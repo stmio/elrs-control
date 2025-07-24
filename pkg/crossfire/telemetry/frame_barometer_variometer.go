@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 )
 
 const BarometerVariometerFrameSize int = 9
@@ -40,17 +39,6 @@ func (t *BarometerVariometerFrame) Altitude() float32 {
 
 func (t *BarometerVariometerFrame) VerticalSpeed() float32 {
 	return float32(int16(binary.BigEndian.Uint16(t.RawData[5:7]))) / 100 //data comes in cm/s so divide by 100 to convert to m/s
-}
-
-func (t *BarometerVariometerFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_BarometerVariometer{
-			BarometerVariometer: &pb.BarometerVariometerData{
-				Altitude:      t.Altitude(),
-				VerticalSpeed: t.VerticalSpeed(),
-			},
-		},
-	}
 }
 
 func (t *BarometerVariometerFrame) String() string {

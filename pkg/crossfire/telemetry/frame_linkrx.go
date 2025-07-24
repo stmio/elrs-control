@@ -7,7 +7,6 @@ package telemetry
 import (
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 )
 
 const LinkRXFrameSize int = 9
@@ -43,17 +42,6 @@ func (t *LinkRXFrame) UplinkRSSI() uint32 {
 func (t *LinkRXFrame) DownlinkPower() uint32 {
 	//goland:noinspection GoRedundantConversion
 	return uint32(uint8(t.RawData[7]))
-}
-
-func (t *LinkRXFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_LinkRx{
-			LinkRx: &pb.LinkRXData{
-				UplinkRssi:    t.UplinkRSSI(),
-				DownlinkPower: t.DownlinkPower(),
-			},
-		},
-	}
 }
 
 func (t *LinkRXFrame) String() string {

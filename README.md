@@ -1,5 +1,11 @@
 # ELRS Joystick Control
 
+## Building
+
+```bash
+go build -tags static -trimpath --ldflags '-s -w' -o elrs-joystick-control ./cmd/elrs-joystick-control/.
+```
+
 ## How It Works
 
 The application reads the raw inputs from one or more USB gamepad devices. It takes these

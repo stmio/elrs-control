@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 )
 
 const BatteryFrameSize int = 12
@@ -53,19 +52,6 @@ func (t *BatteryFrame) Fuel() float32 {
 func (t *BatteryFrame) Remaining() float32 {
 	//goland:noinspection GoRedundantConversion
 	return float32(uint32(t.RawData[10]))
-}
-
-func (t *BatteryFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_Battery{
-			Battery: &pb.BatteryData{
-				Voltage:   t.Voltage(),
-				Current:   t.Current(),
-				Fuel:      t.Fuel(),
-				Remaining: t.Remaining(),
-			},
-		},
-	}
 }
 
 func (t *BatteryFrame) String() string {

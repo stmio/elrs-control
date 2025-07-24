@@ -9,7 +9,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire/telemetry"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 	"strings"
 )
 
@@ -93,24 +92,6 @@ func (f *Uint16Field) Default() uint16 {
 
 func (f *Uint16Field) Units() string {
 	return string(f.data[f.nameEnd+9 : f.unitsEnd])
-}
-
-func (f *Uint16Field) Proto() *pb.CRSFDeviceFieldData {
-	return &pb.CRSFDeviceFieldData{
-		Data: &pb.CRSFDeviceFieldData_Uint16{
-			Uint16: &pb.CRSFDeviceFieldUint16{
-				Name:     strings.ToValidUTF8(f.Name(), ""),
-				Type:     pb.CRSFDeviceFieldType(f.Type()),
-				Id:       f.Id(),
-				ParentId: f.ParentId(),
-				Value:    uint32(f.Value()),
-				Min:      uint32(f.Min()),
-				Max:      uint32(f.Max()),
-				Default:  uint32(f.Default()),
-				Units:    f.Units(),
-			},
-		},
-	}
 }
 
 func (f *Uint16Field) String() string {

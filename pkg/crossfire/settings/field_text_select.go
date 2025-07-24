@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire/telemetry"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 	"strings"
 )
 
@@ -101,25 +100,6 @@ func (f *TextSelectField) Default() uint32 {
 
 func (f *TextSelectField) Units() string {
 	return string(f.data[f.optionsEnd+5 : f.unitsEnd])
-}
-
-func (f *TextSelectField) Proto() *pb.CRSFDeviceFieldData {
-	return &pb.CRSFDeviceFieldData{
-		Data: &pb.CRSFDeviceFieldData_TextSelect{
-			TextSelect: &pb.CRSFDeviceFieldTextSelect{
-				Name:     strings.ToValidUTF8(f.Name(), ""),
-				Type:     pb.CRSFDeviceFieldType(f.Type()),
-				Id:       f.Id(),
-				ParentId: f.ParentId(),
-				Options:  f.Options(),
-				Value:    f.Value(),
-				Min:      f.Min(),
-				Max:      f.Max(),
-				Default:  f.Default(),
-				Units:    f.Units(),
-			},
-		},
-	}
 }
 
 func (f *TextSelectField) String() string {

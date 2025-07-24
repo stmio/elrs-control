@@ -9,7 +9,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 )
 
 type TelemStatusExtType interface {
@@ -70,19 +69,6 @@ func (t *StatusExtFrame) Flags() []LinkStatusFlag {
 }
 func (t *StatusExtFrame) Message() string {
 	return string(t.RawData[9 : 9+bytes.IndexByte(t.RawData[9:], 0)])
-}
-
-func (t *StatusExtFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_DeviceLinkStatus{
-			DeviceLinkStatus: &pb.CRSFDeviceLinkStatusData{
-				BadPacketsCount:  t.BadPackets(),
-				GoodPacketsCount: t.GoodPackets(),
-				Flags:            LinkStatusFlagArrayToProto(t.Flags()),
-				WarningInfo:      t.Message(),
-			},
-		},
-	}
 }
 
 func (t *StatusExtFrame) String() string {

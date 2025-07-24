@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 	"time"
 )
 
@@ -51,17 +50,6 @@ func (t *SyncExtFrame) Rate() int32 {
 
 func (t *SyncExtFrame) Offset() int32 {
 	return int32(binary.BigEndian.Uint32(t.RawData[10:14]))
-}
-
-func (t *SyncExtFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_Sync{
-			Sync: &pb.SyncData{
-				Rate:   t.Rate(),
-				Offset: t.Offset(),
-			},
-		},
-	}
 }
 
 func (t *SyncExtFrame) String() string {

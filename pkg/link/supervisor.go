@@ -10,6 +10,7 @@ import (
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
 	"github.com/kaack/elrs-joystick-control/pkg/serial"
 	"gopkg.in/tomb.v2"
+	"time"
 )
 
 func (c *Controller) StartSupervisor(port string, baudRate int32) error {
@@ -44,6 +45,7 @@ func action(action string, err error) {
 		fmt.Printf("error while %s. %s", action, err.Error())
 	}
 }
+
 func (c *Controller) SupervisorLoop(port string, baudRate int32) error {
 	fmt.Printf("(supervisor) starting, port: %s, baud: %v ...\n", port, baudRate)
 	c.supervisorState = SupervisorActive
@@ -78,6 +80,28 @@ Supervisor:
 		action("starting send loop", c.StartSendLoop(sport, sendChan, recvChan))
 		action("starting recv loop", c.StartRecvLoop(sport, sendChan, recvChan))
 
+		// Perform initial handshake sequence
+		fmt.Printf("(supervisor) performing handshake...\n")
+		time.Sleep(100 * time.Millisecond)
+		sendChan <- SendModelId
+		time.Sleep(100 * time.Millisecond)
+		sendChan <- PingDevices
+		time.Sleep(100 * time.Millisecond)
+		
+		// Send model ID periodically to maintain link
+		handshakeTicker := time.NewTicker(1 * time.Second)
+		go func() {
+			for {
+				select {
+				case <-handshakeTicker.C:
+					sendChan <- SendModelId
+				case <-c.supervisorTomb.Dying():
+					handshakeTicker.Stop()
+					return
+				}
+			}
+		}()
+
 	Loop:
 		for {
 			select {
@@ -93,6 +117,7 @@ Supervisor:
 			}
 		}
 
+		handshakeTicker.Stop()
 		action("stopping recv loop", c.StopRecvLoop())
 		action("stopping send loop", c.StopSendLoop())
 		action("closing serial port", sport.Close())

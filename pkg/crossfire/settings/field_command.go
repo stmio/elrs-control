@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire/telemetry"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 	"strings"
 )
 
@@ -100,22 +99,6 @@ func (f *CommandField) Timeout() uint32 {
 
 func (f *CommandField) Message() string {
 	return string(f.data[f.nameEnd+3 : f.infoEnd])
-}
-
-func (f *CommandField) Proto() *pb.CRSFDeviceFieldData {
-	return &pb.CRSFDeviceFieldData{
-		Data: &pb.CRSFDeviceFieldData_Command{
-			Command: &pb.CRSFDeviceFieldCommand{
-				Name:     strings.ToValidUTF8(f.Name(), ""),
-				Type:     pb.CRSFDeviceFieldType(f.Type()),
-				Id:       f.Id(),
-				ParentId: f.ParentId(),
-				Step:     pb.CRSFDeviceFieldCommandStep(f.Step()),
-				Timeout:  f.Timeout(),
-				Message:  f.Message(),
-			},
-		},
-	}
 }
 
 func (f *CommandField) String() string {

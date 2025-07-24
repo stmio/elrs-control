@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 )
 
 const GPSFrameSize int = 19
@@ -62,21 +61,6 @@ func (t *GPSFrame) Altitude() int32 {
 func (t *GPSFrame) Satellites() uint32 {
 	//goland:noinspection GoRedundantConversion
 	return uint32(uint8(t.RawData[17]))
-}
-
-func (t *GPSFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_Gps{
-			Gps: &pb.GPSData{
-				Latitude:    t.Latitude(),
-				Longitude:   t.Longitude(),
-				GroundSpeed: t.GroundSpeed(),
-				Heading:     t.Heading(),
-				Altitude:    t.Altitude(),
-				Satellites:  t.Satellites(),
-			},
-		},
-	}
 }
 
 func (t *GPSFrame) String() string {

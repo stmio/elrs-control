@@ -15,9 +15,8 @@ import (
 )
 
 func (c *Controller) StartRecvLoop(port *serial.Port, sendChan chan any, recvChan chan any) error {
-
 	if c.recvLoopTomb != nil && c.recvLoopTomb.Alive() {
-		return errors.New("send loop is already active")
+		return errors.New("recv loop is already active")
 	}
 
 	c.recvLoopTomb = &tomb.Tomb{}
@@ -41,14 +40,11 @@ func (c *Controller) StopRecvLoop() error {
 }
 
 func (c *Controller) RecvLoop(port *serial.Port, sendChan chan any, recvChan chan any) error {
-	//time.Sleep(5 * time.Second)
 	refreshRate := crossfire.GetRefreshRate(port.BaudRate)
 	maxInactivityTime := refreshRate * 4
 	fmt.Printf("(recv-loop) starting, refresh rate %v, max inactivity: %v\n", refreshRate, maxInactivityTime)
 	ticker := time.NewTicker(refreshRate)
 
-	telemPacketCount := 1
-	telemErrorCount := 0
 	tickCount := uint64(0)
 	currentTickTime := time.Now()
 	lastRecvTelemTime := time.Now()
@@ -61,6 +57,7 @@ func (c *Controller) RecvLoop(port *serial.Port, sendChan chan any, recvChan cha
 
 	c.recvPacketsCount = 0
 	c.errorPacketsCount = 0
+
 Loop:
 	for {
 		select {
@@ -69,7 +66,6 @@ Loop:
 
 		case chData := <-recvChan:
 			switch chData.(type) {
-			//receive data from the send loop
 			default:
 				//no-op
 			}
@@ -88,51 +84,69 @@ Loop:
 
 			if tPacket, err = reader.Next(c.recvLoopTomb); err != nil {
 				if _, ok := err.(*telem.InterruptedError); ok {
-					//exit silently
 					break
 				}
-
 				fmt.Printf("(recv-loop) error reading telemetry data. error: %s\n", err.Error())
-				telemErrorCount += 1
 				c.errorPacketsCount += 1
 				break
 			}
 
-			telemPacketCount += 1
 			c.recvPacketsCount += 1
+			lastRecvTelemTime = currentTickTime
 
+			// Process telemetry based on type
 			switch tFrame := (tPacket).(type) {
-			case telem.TelemStatusExtType:
-				//fmt.Printf("(recv-loop) %s\n", tFrame)
-				c.DeviceStatusBroadcaster.Broadcast(tFrame.Proto())
 			case telem.TelemSyncType:
-				c.TelemetryBroadcaster.Broadcast(tFrame.Proto())
 				sendChan <- &tFrame
-			case telem.TelemGPSType,
-				telem.TelemLinkStatsType,           //ELRS only (originates from RX)
-				telem.TelemBatteryType,             //ELRS, TBS (originates from FC)
-				telem.TelemAttitudeType,            //ELRS, TBS (originates from FC)
-				telem.TelemFlightModeType,          //ELRS, TBS (originates from FC)
-				telem.TelemLinkTXType,              //TBS only
-				telem.TelemLinkRXType,              //TBS only
-				telem.TelemBarometerType,           //TBS only
-				telem.TelemVariometerType,          //TBS Only
-				telem.TelemBarometerVariometerType: // ELRS only
-				//fmt.Printf("(recv-loop) %s\n", tFrame)
-				c.TelemetryBroadcaster.Broadcast(tFrame.Proto())
-			case telem.TelemDeviceInfoExtType:
-				//fmt.Printf("(recv-loop) %s\n", tFrame)
-				c.DeviceInfoBroadcaster.Broadcast(tFrame.Proto())
-			case telem.TelemDeviceSettingsEntryExtType:
-				//fmt.Printf("(recv-loop) %s\n", tFrame)
-				c.DeviceFieldBroadcaster.Broadcast(tFrame.Proto())
+
+			case telem.TelemLinkStatsType:
+				c.sendLinkStats(LinkStats{
+					UplinkRSSI1:  tFrame.UplinkRSSI1(),
+					UplinkRSSI2:  tFrame.UplinkRSSI2(),
+					UplinkLQ:     tFrame.UplinkLinkQuality(),
+					UplinkSNR:    tFrame.UplinkSNR(),
+					DownlinkRSSI: tFrame.DownlinkRSSI(),
+					DownlinkLQ:   tFrame.DownlinkLinkQuality(),
+				})
+
+			case telem.TelemBatteryType:
+				c.sendBattery(BatteryData{
+					Voltage:   tFrame.Voltage(),
+					Current:   tFrame.Current(),
+					Remaining: tFrame.Remaining(),
+				})
+
+			case telem.TelemGPSType:
+				c.sendGPS(GPSData{
+					Latitude:    tFrame.Latitude(),
+					Longitude:   tFrame.Longitude(),
+					Altitude:    tFrame.Altitude(),
+					Satellites:  tFrame.Satellites(),
+					GroundSpeed: tFrame.GroundSpeed(),
+				})
+
+			case telem.TelemAttitudeType:
+				c.sendAttitude(AttitudeData{
+					Pitch: tFrame.Pitch(),
+					Roll:  tFrame.Roll(),
+					Yaw:   tFrame.Yaw(),
+				})
+
+			// Ignore other telemetry types
+			case telem.TelemFlightModeType,
+				telem.TelemLinkTXType,
+				telem.TelemLinkRXType,
+				telem.TelemBarometerType,
+				telem.TelemVariometerType,
+				telem.TelemBarometerVariometerType:
+				// Skip these
+
 			default:
-				//fmt.Printf("(recv-loop) tData: %x\n", tData)
+				// Unknown telemetry
 			}
 		}
-
 	}
-	fmt.Printf("(recv-loop) exiting recv telemetry loop...\n")
 
+	fmt.Printf("(recv-loop) exiting recv telemetry loop...\n")
 	return nil
 }

@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 	"math"
 )
 
@@ -48,18 +47,6 @@ func (t *AttitudeFrame) Roll() float32 {
 
 func (t *AttitudeFrame) Yaw() float32 {
 	return float32(int16(binary.BigEndian.Uint16(t.RawData[7:9]))) / 1000 * DEGREES / 10
-}
-
-func (t *AttitudeFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_Attitude{
-			Attitude: &pb.AttitudeData{
-				Pitch: t.Pitch(),
-				Roll:  t.Roll(),
-				Yaw:   t.Yaw(),
-			},
-		},
-	}
 }
 
 func (t *AttitudeFrame) String() string {

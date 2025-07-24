@@ -7,7 +7,6 @@ package telemetry
 import (
 	"fmt"
 	"github.com/kaack/elrs-joystick-control/pkg/crossfire"
-	"github.com/kaack/elrs-joystick-control/pkg/proto/generated/pb"
 )
 
 type TelemFlightModeType interface {
@@ -32,16 +31,6 @@ func (t *FlightModeFrame) Data() []uint8 {
 
 func (t *FlightModeFrame) Mode() string {
 	return string(t.RawData[2 : len(t.RawData)-2])
-}
-
-func (t *FlightModeFrame) Proto() *pb.Telemetry {
-	return &pb.Telemetry{
-		Data: &pb.Telemetry_FlightMode{
-			FlightMode: &pb.FlightModeData{
-				Mode: t.Mode(),
-			},
-		},
-	}
 }
 
 func (t *FlightModeFrame) String() string {
