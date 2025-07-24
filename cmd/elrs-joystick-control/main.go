@@ -7,79 +7,52 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kaack/elrs-joystick-control/pkg/client"
-	cc "github.com/kaack/elrs-joystick-control/pkg/config"
-	dc "github.com/kaack/elrs-joystick-control/pkg/devices"
-	hc "github.com/kaack/elrs-joystick-control/pkg/http"
-	lc "github.com/kaack/elrs-joystick-control/pkg/link"
-	sc "github.com/kaack/elrs-joystick-control/pkg/serial"
-	gc "github.com/kaack/elrs-joystick-control/pkg/server"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
+
+	cc "github.com/kaack/elrs-joystick-control/pkg/config"
+	dc "github.com/kaack/elrs-joystick-control/pkg/devices"
+	lc "github.com/kaack/elrs-joystick-control/pkg/link"
+	sc "github.com/kaack/elrs-joystick-control/pkg/serial"
 )
 
 func main() {
+    txPortName := flag.String("tx-port", "", "TX Serial port name")
+    txBaudRate := flag.Int("tx-baud", 921600, "TX Serial port baud rate")
+    configFile := flag.String("config", "", "Config JSON file path")
+    flag.Parse()
 
-	webAppPort := new(int)
-	flag.IntVar(webAppPort, "webapp-port", 3000, "Web Application port number")
+    // Initialize controllers
+    devicesCtl := dc.NewCtl()
+    defer devicesCtl.Quit()
 
-	grpcPort := new(int)
-	flag.IntVar(grpcPort, "grpc-port", 10000, "gRPC Server port number")
+    configCtl := cc.NewCtl(devicesCtl)
+    defer configCtl.Quit()
 
-	txServerPortName := new(string)
-	flag.StringVar(txServerPortName, "tx-serial-port-name", "", "tx Serial port name")
+    serialCtl := sc.NewCtl()
+    defer serialCtl.Quit()
 
-	txServerPortBaudRate := new(int)
-	flag.IntVar(txServerPortBaudRate, "tx-serial-port-baud-rate", 921600, "tx Serial port baud rate")
+    linkCtl := lc.NewCtl(devicesCtl, serialCtl, configCtl)
+    defer linkCtl.Quit()
 
-	configFilePath := new(string)
-	flag.StringVar(configFilePath, "config-file-path", "", "config json file path")
+    // Load config if provided
+    if *configFile != "" {
+        // Load your config file
+    }
 
-	disableWebUI := new(bool)
-	flag.BoolVar(disableWebUI, "disable-web-ui", false, "disable the Web-UI HTTP server")
+    // Start the RF link if port specified
+    if *txPortName != "" {
+        if err := linkCtl.StartSupervisor(*txPortName, int32(*txBaudRate)); err != nil {
+            panic(err)
+        }
+    }
 
-	flag.Parse()
-
-	grpcServer := grpc.NewServer([]grpc.ServerOption{}...)
-	reflection.Register(grpcServer)
-
-	httpCtl := hc.NewCtl(*webAppPort, grpcServer)
-	defer httpCtl.Quit()
-
-	devicesCtl := dc.NewCtl()
-	defer devicesCtl.Quit()
-
-	configCtl := cc.NewCtl(devicesCtl)
-
-	defer configCtl.Quit()
-
-	serialCtl := sc.NewCtl()
-	defer serialCtl.Quit()
-
-	linkCtl := lc.NewCtl(devicesCtl, serialCtl, configCtl)
-	defer linkCtl.Quit()
-
-	serverCtl := gc.NewCtl(*grpcPort, grpcServer, devicesCtl, serialCtl, configCtl, linkCtl, httpCtl)
-	defer serverCtl.Quit()
-
-	// Automatically configure through gprc when conditions are met
-	client.Init(*txServerPortName, *configFilePath, *txServerPortBaudRate, *grpcPort, *disableWebUI)
-
-	go func() {
-		sigChan := make(chan os.Signal)
-		signal.Notify(sigChan, os.Interrupt)
-		<-sigChan
-		fmt.Println("Ctrl-C detected, exiting")
-		if err := httpCtl.Stop(); err != nil {
-			fmt.Printf("could not stop HTTP controller. %s\n", err.Error())
-		}
-		if err := serverCtl.Stop(); err != nil {
-			fmt.Printf("could not stop HTTP controller. %s\n", err.Error())
-		}
-	}()
-
-	serverCtl.Wait()
+    // Handle Ctrl-C
+    sigChan := make(chan os.Signal, 1)
+    signal.Notify(sigChan, os.Interrupt)
+    <-sigChan
+    
+    fmt.Println("Shutting down...")
 }
+Creating Your API
+F
